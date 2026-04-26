@@ -4,6 +4,7 @@ from src.schema.profile_schema import Profile, Metadata
 from src.validation.question_validator import QuestionValidator
 from src.scoring.scorer import Scorer
 from src.scoring.contradictions import ContradictionEngine
+from src.scoring.insights import generate_insights
 
 class ProfilerEngine:
     """Orchestrates the validation, scoring, and profile generation."""
@@ -70,11 +71,14 @@ class ProfilerEngine:
         )
         
         # Assemble Final Profile
-        return Profile(
+        profile = Profile(
             values=values,
             decision_behavior=behavior,
             cube_position=cube,
             metadata=metadata,
             contradictions=contradictions,
-            insights=[] # To be populated by an insight engine later if needed
+            insights=[]
         )
+
+        profile.insights = generate_insights(profile)
+        return profile

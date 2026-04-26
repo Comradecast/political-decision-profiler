@@ -1,0 +1,42 @@
+[
+  {
+    "id": "q1",
+    "scenario": "A policy will increase growth but guarantees periodic recessions. Do you accept this tradeoff?",
+    "primary_dimension": "risk_tolerance",
+    "secondary_dimension": null,
+    "tradeoff_present": true,
+    "uncertainty_present": false,
+    "options": [
+      {
+        "id": "o1",
+        "label": "Yes, growth is worth the instability",
+        "scoring_effects": { "risk_tolerance": 80 }
+      },
+      {
+        "id": "o2",
+        "label": "No, stability matters more",
+        "scoring_effects": { "risk_tolerance": -80 }
+      }
+    ]
+  },
+  {
+    "id": "q2",
+    "scenario": "A possible public health issue may become serious later. Should officials intervene early?",
+    "primary_dimension": "intervention_style",
+    "secondary_dimension": null,
+    "tradeoff_present": true,
+    "uncertainty_present": true,
+    "options": [
+      {
+        "id": "o1",
+        "label": "Wait until the risk is clearer",
+        "scoring_effects": { "intervention_style": 80 }
+      },
+      {
+        "id": "o2",
+        "label": "Act early to prevent harm",
+        "scoring_effects": { "intervention_style": -80 }
+      }
+    ]
+  }
+]
