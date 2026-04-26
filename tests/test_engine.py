@@ -31,21 +31,21 @@ def test_engine_process_responses():
     
     responses = [
         (q1, "o1"), # Strong market preference (+100)
-        (q2, "o2")  # Strong intervention support (-100)
+        (q2, "o1")  # Strong intervention style (+100)
     ]
     
     profile = engine.process_responses(responses)
     
     # Check values
     assert profile.values.market_preference == 100.0
-    assert profile.decision_behavior.intervention_style == 0.0
+    assert profile.decision_behavior.intervention_style == 100.0
     
     # Check metadata (0 neutral answers)
     assert profile.metadata.confidence_score == 1.0
     
     # We should have triggered a contradiction
     assert len(profile.contradictions) == 1
-    assert profile.contradictions[0].type == "vector_opposition"
+    assert profile.contradictions[0].type == "relationship_conflict"
     assert profile.contradictions[0].severity == 1.0
     
     # Check consistency drop
