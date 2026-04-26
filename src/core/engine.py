@@ -1,4 +1,4 @@
-from typing import List, Dict, Tuple
+from typing import List, Tuple
 from src.schema.question_schema import Question
 from src.schema.profile_schema import Profile, Metadata
 from src.validation.question_validator import QuestionValidator
@@ -18,6 +18,16 @@ class ProfilerEngine:
         Accepts validated questions and selected responses.
         Generates the final profile.
         """
+        self.scorer = Scorer()
+        self.total_questions = 0
+        self.neutral_answers = 0
+
+        seen_question_ids = set()
+        for question, _ in questions_and_answers:
+            if question.id in seen_question_ids:
+                raise ValueError(f"Duplicate question id in responses: {question.id}")
+            seen_question_ids.add(question.id)
+
         for question, answer_id in questions_and_answers:
             # 1. Validate Question
             QuestionValidator.validate(question)
@@ -28,9 +38,9 @@ class ProfilerEngine:
             # 3. Track metadata
             self.total_questions += 1
             
-            # Check if answer was neutral (0 scoring effect across all dimensions)
+            # Provisional: future schemas should explicitly mark neutral options.
             selected_option = next(opt for opt in question.options if opt.id == answer_id)
-            is_neutral = all(effect == 0.0 for effect in selected_option.scoring_effects.values())
+            is_neutral = all(abs(effect) < 1e-6 for effect in selected_option.scoring_effects.values())
             if is_neutral:
                 self.neutral_answers += 1
 

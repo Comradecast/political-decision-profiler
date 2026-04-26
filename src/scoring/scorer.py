@@ -28,6 +28,9 @@ class Scorer:
             self.raw_scores[dim] += effect
             self.counts[dim] += 1
 
+    # Current normalization assumes uniform +/-100 scoring per question.
+    # If future question weights vary, normalization must be redesigned to track
+    # max possible magnitude per dimension.
     def _normalize(self, raw_score: float, count: int) -> float:
         """Normalizes a raw score to a 0-100 range."""
         if count == 0:

@@ -8,6 +8,8 @@ class ContradictionEngine:
     def detect(values: Values, behavior: DecisionBehavior) -> List[Contradiction]:
         contradictions = []
 
+        # Current contradiction rules are provisional hand-authored heuristics;
+        # later versions should use a more general dimension-space model.
         # Example Contradiction 1: Market preference vs Intervention style
         # Prefers market (high x) but supports early intervention (low intervention_style)
         market_pref = values.market_preference

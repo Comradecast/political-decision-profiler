@@ -38,6 +38,8 @@ class QuestionValidator:
                 if primary not in keys:
                     raise ValueError(f"Invalid Question: Option missing primary dimension '{primary}' in scoring_effects.")
 
+        # Dimension-specific keyword checks are provisional heuristics; future
+        # versions should replace them with structural question metadata.
         # Dimension-specific rules
         if primary == "risk_tolerance":
             if question.uncertainty_present:
