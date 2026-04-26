@@ -1,5 +1,37 @@
-from typing import List
+from typing import Dict, List
 from src.schema.profile_schema import Values, DecisionBehavior, Contradiction
+
+PAIR_MAGNITUDE_THRESHOLD = 0.6
+PAIR_OPPOSITION_THRESHOLD = 0.45
+GLOBAL_INCOHERENCE_THRESHOLD = 0.5
+
+VECTOR_DIMENSIONS = [
+    "market_preference",
+    "decision_authority",
+    "fairness_preference",
+    "risk_tolerance",
+    "time_horizon",
+    "intervention_style",
+    "system_trust",
+]
+
+
+def _to_normalized(value: float) -> float:
+    return max(-1.0, min(1.0, (value - 50.0) / 50.0))
+
+
+def profile_vector(values: Values, behavior: DecisionBehavior) -> Dict[str, float]:
+    """Converts profile dimensions from [0, 100] scores into a [-1, 1] vector."""
+    return {
+        "market_preference": _to_normalized(values.market_preference),
+        "decision_authority": _to_normalized(values.decision_authority),
+        "fairness_preference": _to_normalized(values.fairness_preference),
+        "risk_tolerance": _to_normalized(behavior.risk_tolerance),
+        "time_horizon": _to_normalized(behavior.time_horizon),
+        "intervention_style": _to_normalized(behavior.intervention_style),
+        "system_trust": _to_normalized(behavior.system_trust.aggregate),
+    }
+
 
 class ContradictionEngine:
     """Detects cross-axis contradictions based on dimension interactions."""
@@ -7,47 +39,37 @@ class ContradictionEngine:
     @staticmethod
     def detect(values: Values, behavior: DecisionBehavior) -> List[Contradiction]:
         contradictions = []
+        vector = profile_vector(values, behavior)
 
-        # Current contradiction rules are provisional hand-authored heuristics;
-        # later versions should use a more general dimension-space model.
-        # Example Contradiction 1: Market preference vs Intervention style
-        # Prefers market (high x) but supports early intervention (low intervention_style)
-        market_pref = values.market_preference
-        intervention = behavior.intervention_style
-        
-        # severity is how close they are to opposite extremes
-        # If market_pref is 100, and intervention is 0 -> strong contradiction
-        market_diff = market_pref - 50.0
-        intervention_diff = 50.0 - intervention
-        
-        if market_diff > 10.0 and intervention_diff > 10.0:
-            # Both are strongly in the contradictory direction
-            # Max possible product of diffs is 50 * 50 = 2500
-            severity = (market_diff * intervention_diff) / 2500.0
-            if severity > 0.3:
-                contradictions.append(Contradiction(
-                    type="market_vs_intervention",
-                    severity=round(severity, 2),
-                    description="Prefers market outcomes but supports early intervention under uncertainty",
-                    related_dimensions=["market_preference", "intervention_style"]
-                ))
-        
-        # Example Contradiction 2: Decentralized Authority vs High System Trust (Government)
-        # Prefers decentralized local control (low y) but has high trust in government
-        authority = values.decision_authority
-        gov_trust = behavior.system_trust.government
-        
-        auth_diff = 50.0 - authority # high when centralized
-        trust_diff = gov_trust - 50.0 # high when high trust
-        
-        if auth_diff > 10.0 and trust_diff > 10.0:
-            severity = (auth_diff * trust_diff) / 2500.0
-            if severity > 0.3:
-                contradictions.append(Contradiction(
-                    type="decentralized_vs_gov_trust",
-                    severity=round(severity, 2),
-                    description="Prefers decentralized/local decision making despite high trust in centralized government",
-                    related_dimensions=["decision_authority", "system_trust"]
-                ))
-                
+        for index, first_dimension in enumerate(VECTOR_DIMENSIONS):
+            for second_dimension in VECTOR_DIMENSIONS[index + 1:]:
+                first_value = vector[first_dimension]
+                second_value = vector[second_dimension]
+                first_magnitude = abs(first_value)
+                second_magnitude = abs(second_value)
+
+                if (
+                    first_magnitude >= PAIR_MAGNITUDE_THRESHOLD
+                    and second_magnitude >= PAIR_MAGNITUDE_THRESHOLD
+                    and first_value * second_value < 0.0
+                ):
+                    conflict_score = abs(first_value * second_value)
+                    if conflict_score >= PAIR_OPPOSITION_THRESHOLD:
+                        contradictions.append(Contradiction(
+                            type="vector_opposition",
+                            severity=round(min(1.0, conflict_score), 2),
+                            description="Conflicting tendencies across dimensions",
+                            related_dimensions=[first_dimension, second_dimension]
+                        ))
+
+        mean = sum(vector.values()) / len(vector)
+        variance = sum((value - mean) ** 2 for value in vector.values()) / len(vector)
+        if variance >= GLOBAL_INCOHERENCE_THRESHOLD:
+            contradictions.append(Contradiction(
+                type="profile_incoherence",
+                severity=round(min(1.0, variance), 2),
+                description="Conflicting tendencies across dimensions",
+                related_dimensions=VECTOR_DIMENSIONS
+            ))
+
         return contradictions

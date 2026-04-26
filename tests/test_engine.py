@@ -43,9 +43,9 @@ def test_engine_process_responses():
     # Check metadata (0 neutral answers)
     assert profile.metadata.confidence_score == 1.0
     
-    # We should have triggered the market_vs_intervention contradiction
+    # We should have triggered a contradiction
     assert len(profile.contradictions) == 1
-    assert profile.contradictions[0].type == "market_vs_intervention"
+    assert profile.contradictions[0].type == "vector_opposition"
     assert profile.contradictions[0].severity == 1.0
     
     # Check consistency drop
