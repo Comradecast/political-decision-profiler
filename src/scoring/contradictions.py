@@ -40,9 +40,15 @@ class ContradictionEngine:
     def detect(values: Values, behavior: DecisionBehavior) -> List[Contradiction]:
         contradictions = []
         vector = profile_vector(values, behavior)
+        seen_pairs = set()
 
         for index, first_dimension in enumerate(VECTOR_DIMENSIONS):
             for second_dimension in VECTOR_DIMENSIONS[index + 1:]:
+                pair_key = tuple(sorted([first_dimension, second_dimension]))
+                if pair_key in seen_pairs:
+                    continue
+                seen_pairs.add(pair_key)
+
                 first_value = vector[first_dimension]
                 second_value = vector[second_dimension]
                 first_magnitude = abs(first_value)
@@ -65,11 +71,17 @@ class ContradictionEngine:
         mean = sum(vector.values()) / len(vector)
         variance = sum((value - mean) ** 2 for value in vector.values()) / len(vector)
         if variance >= GLOBAL_INCOHERENCE_THRESHOLD:
+            sorted_dimensions = sorted(
+                vector.items(),
+                key=lambda item: abs(item[1] - mean),
+                reverse=True
+            )
+            top_dimensions = [dimension for dimension, _ in sorted_dimensions[:3]]
             contradictions.append(Contradiction(
                 type="profile_incoherence",
-                severity=round(min(1.0, variance), 2),
+                severity=round(min(1.0, variance * 2.0), 2),
                 description="Conflicting tendencies across dimensions",
-                related_dimensions=VECTOR_DIMENSIONS
+                related_dimensions=top_dimensions
             ))
 
         return contradictions

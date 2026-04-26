@@ -41,6 +41,26 @@ def test_global_incoherence_detected_when_profile_is_highly_spread():
     assert any(c.type == "profile_incoherence" for c in contradictions)
 
 
+def test_global_incoherence_uses_scaled_severity_and_top_dimensions():
+    v = Values(market_preference=100.0, decision_authority=0.0, fairness_preference=100.0)
+    db = DecisionBehavior(
+        risk_tolerance=0.0, time_horizon=100.0, intervention_style=0.0,
+        system_trust=SystemTrust(government=100.0, corporate=100.0, aggregate=100.0, variance=0.0)
+    )
+
+    incoherence = [
+        c for c in ContradictionEngine.detect(v, db)
+        if c.type == "profile_incoherence"
+    ][0]
+
+    assert incoherence.severity == 1.0
+    assert incoherence.related_dimensions == [
+        "decision_authority",
+        "risk_tolerance",
+        "intervention_style",
+    ]
+
+
 def test_vector_opposition_severity_is_monotonic():
     medium_values = Values(market_preference=85.0, decision_authority=50.0, fairness_preference=50.0)
     strong_values = Values(market_preference=100.0, decision_authority=50.0, fairness_preference=50.0)
